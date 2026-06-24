@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ヒデロクスケ・リモコン v0.1</title>
+    <style>
+/* ─── リセット & 変数 ─── */
+:root {
+    --bg: #f2f2f7;
+    --text: #1c1c1e;
+    --sub-text: #636366;
+    --card: #ffffff;
+    --border: #e5e5ea;
+    --primary: #0071e3;
+    --primary-dark: #0060c7;
+    --radius-lg: 18px;
+    --radius-md: 14px;
+    --radius-pill: 28px;
+    --shadow: 0 1px 5px rgba(0,0,0,0.07);
+    --shadow-btn: 0 4px 14px rgba(0,113,227,0.28);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+html { height: 100%; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+                 "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    min-height: 100dvh;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+}
+
+#app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ─── ヘッダー ─── */
+header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+}
+
+header.hidden { display: none; }
+
+.back-btn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 8px 12px 8px 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.breadcrumb {
+    font-size: 13px;
+    color: var(--sub-text);
+    margin-left: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ─── メイン ─── */
+main {
+    flex: 1;
+    padding: 20px 16px 0;
+}
+
+.screen {
+    display: none;
+    animation: fadeIn 0.22s ease;
+}
+
+.screen.active { display: block; }
+
+/* ─── トップ画面 ─── */
+.top-header {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.top-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    color: var(--text);
+}
+
+.top-subtitle {
+    font-size: 13px;
+    color: var(--sub-text);
+    margin-top: 4px;
+}
+
+/* ─── 8ボタングリッド ─── */
+.handy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.handy-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 16px 16px 14px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: transform 0.12s, opacity 0.12s, box-shadow 0.12s;
+    min-height: 108px;
+    box-shadow: var(--shadow);
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.handy-btn:active {
+    transform: scale(0.95);
+    opacity: 0.85;
+}
+
+.handy-icon {
+    font-size: 34px;
+    line-height: 1;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.handy-label {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--text);
+    text-align: left;
+}
+
+/* カラーアクセント（左上の細いライン） */
+.handy-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+    background: transparent;
+}
+
+.handy-btn[data-id="ひでGPT"]::before   { background: #cc5de8; }
+.handy-btn[data-id="明智君"]::before   { background: #339af0; }
+.handy-btn[data-id="体感"]::before     { background: #ff922b; }
+.handy-btn[data-id="現実君"]::before   { background: #868e96; }
+.handy-btn[data-id="燃料線"]::before   { background: #fcc419; }
+.handy-btn[data-id="夢ベクトル"]::before { background: #845ef7; }
+.handy-btn[data-id="停止"]::before     { background: #ff6b6b; }
+.handy-btn[data-id="ヤスリ"]::before   { background: #20c997; }
+
+/* ─── 結果画面 ─── */
+.result-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-align: center;
+    letter-spacing: -0.3px;
+}
+
+.result-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.prompt-box {
+    background: var(--card);
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border: 1.5px solid var(--border);
+    font-size: 15px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    min-height: 180px;
+    box-shadow: var(--shadow);
+    color: #3a3a3c;
+}
+
+.copy-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 18px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: 0.3px;
+    box-shadow: var(--shadow-btn);
+    user-select: none;
+    min-height: 56px;
+    width: 100%;
+    display: block;
+}
+
+.copy-btn:active {
+    transform: scale(0.97);
+    background: var(--primary-dark);
+}
+
+/* ─── 外部AIリンク ─── */
+.ai-links-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 2px;
+}
+
+.ai-links-label {
+    font-size: 13px;
+    color: var(--sub-text);
+    text-align: center;
+}
+
+.ai-links-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.ai-link-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 12px;
+    min-height: 48px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.12s, opacity 0.12s, background 0.12s;
+    box-shadow: var(--shadow);
+    user-select: none;
+    text-align: center;
+}
+
+.ai-link-btn:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+    background: #f0f0f5;
+}
+
+.ai-link-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+/* ─── フッター（トップ画面のみ） ─── */
+.top-footer {
+    margin-top: 28px;
+    padding-bottom: 8px;
+    text-align: center;
+    font-size: 11px;
+    color: #aeaeb2;
+    letter-spacing: 0.2px;
+}
+
+/* ─── トースト ─── */
+.toast {
+    position: fixed;
+    bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(28,28,30,0.88);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 100;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: none;
+}
+
+.toast.hidden {
+    opacity: 0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+    </style>
+</head>
+<body>
+<div id="app">
+
+    <!-- ヘッダー（結果画面のみ表示） -->
+    <header id="header" class="hidden">
+        <button id="back-btn" class="back-btn">◀ 戻る</button>
+        <div id="breadcrumb" class="breadcrumb"></div>
+    </header>
+
+    <main id="main-content">
+
+        <!-- 画面1：トップ（8ボタン） -->
+        <section id="screen-top" class="screen active">
+            <div class="top-header">
+                <div class="top-title">🤖😲🙃 ヒデロクスケ・リモコン v0.1</div>
+                <div class="top-subtitle">押して、役割へ戻る。コピーして、ひでGPTへ渡す。</div>
+            </div>
+
+            <div class="handy-grid" id="handy-grid">
+                <!-- JSで生成 -->
+            </div>
+
+            <div class="top-footer">Custom cockpit by オノノケホールディングス😲©️</div>
+        </section>
+
+        <!-- 画面2：結果（プロンプト表示） -->
+        <section id="screen-result" class="screen">
+            <h1 class="result-title" id="result-title">コピーして役割へ渡す</h1>
+            <div class="result-container">
+                <div id="prompt-display" class="prompt-box"></div>
+                <button id="copy-btn" class="copy-btn">コピーする</button>
+                <div class="ai-links-section">
+                    <p class="ai-links-label">コピーしたら、使うAIに貼ってください</p>
+                    <div class="ai-links-grid">
+                        <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">
+                            <span class="ai-link-icon">🙃</span>ひでGPTを開く
+                        </a>
+                        <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">
+                            <span class="ai-link-icon">✨</span>Gemini包装係
+                        </a>
+                        <a href="https://copilot.microsoft.com/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">
+                            <span class="ai-link-icon">🪟</span>コパ君
+                        </a>
+                        <a href="https://claude.ai/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">
+                            <span class="ai-link-icon">🌿</span>Claude監査役
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="toast" class="toast hidden">コピーしました。ひでGPTか担当AIに貼ってください 📋</div>
+</div>
+
+<script>
+/* ─── データ定義 ─── */
+const BUTTONS = [
+  {
+    "id": "ひでGPT",
+    "icon": "🙃",
+    "label": "ひでGPTに戻る",
+    "prompt": "今の状態を送ります。
+
+まず僕の体感を一次情報として受け取ってください。
+外部正解で上書きせず、断定できること・推論に留まることを分けてください。
+夢ベクトルを消さずに、責めずにズレ確認して、次の一手を1つだけ出してください。
+
+まだ内容は送っていないので、次の入力を待ってください。"
+  },
+  {
+    "id": "明智君",
+    "icon": "🤖",
+    "label": "明智君に渡す",
+    "prompt": "これから、考え・困りごと・企画・文章のどれかを送ります。
+
+明智君として、以下に分けてください。
+
+1. いま起きている現象
+2. レイヤー分け
+3. 変数
+4. 夢ベクトルとの一致・ズレ
+5. 今日扱う小皿
+6. 今日は触らない棚
+7. 次の一手
+
+説明を大きくしすぎず、まず地上へ置ける形にしてください。
+まだ内容は送っていないので、次の入力を待ってください。"
+  },
+  {
+    "id": "体感",
+    "icon": "😲",
+    "label": "体感を置く",
+    "prompt": "これから、まだ整理されていない体感をそのまま送ります。
+
+正解・不正解にせず、素材として扱ってください。
+
+見てほしいものは、
+- 何が引っかかっているか
+- 何が欲しいのか
+- どこが違うと感じているか
+- 夢に近いのか、夢からズレているのか
+- すぐ言葉にしなくていい部分
+です。
+
+まだ内容は送っていないので、次の入力を待ってください。"
+  },
+  {
+    "id": "現実君",
+    "icon": "🕴️",
+    "label": "現実君を呼ぶ",
+    "prompt": "これから、今の状況を送ります。
+
+現実君として、夢を否定せず、地上条件だけを手のひらサイズで確認してください。
+
+確認するものは、
+- 体力
+- 時間
+- お金
+- 天気
+- 食べ物
+- 通信
+- 身体の重さ
+- 今日できるか
+- どこで止めるか
+です。
+
+巨大化禁止です。
+今できる一手だけに縮小してください。
+まだ内容は送っていないので、次の入力を待ってください。"
+  },
+  {
+    "id": "燃料線",
+    "icon": "⚙️",
+    "label": "燃料線を見る",
+    "prompt": "これから、お金・労働・アプリ・note・Uber・価値の話を送ります。
+
+マルクスAIとして、金銭を敵にも神にもせず、燃料線として整理してください。
+
+見てほしいものは、
+1. これは何時間分のロードーか
+2. 身体を削りすぎていないか
+3. 価値を無料で流しすぎていないか
+4. 夢ベクトルに合う金銭化か
+5. 短期燃料か、未来の価値生成か
+6. 今日の一手
+
+まだ内容は送っていないので、次の入力を待ってください。"
+  },
+  {
+    "id": "夢ベクトル",
+    "icon": "🌌",
+    "label": "夢ベクトル確認",
+    "prompt": "これから、選択肢・企画・行動候補を送ります。
+
+それが夢ベクトルに近いか、ズレているかを確認してください。
+
+夢ベクトルは、自由に海外へ行き、海外にいてもHideki GPTとつながり、表現と現実生成を続けられる方向です。
+
+以下に分けてください。
+1. 夢に近い要素
+2. 夢からズレている要素
+3. 今すぐやる必要がないもの
+4. 今日の小さな採用
+5. 停止条件
+
+まだ内容は送っていないので、次の入力を待ってください。"
+  },
+  {
+    "id": "停止",
+    "icon": "🛑",
+    "label": "今日はここで止める",
+    "prompt": "これから、今日やったこと・考えたこと・途中のものを送ります。
+
+それを、終わらせるためではなく、止めるために整理してください。
+
+出してほしいものは、
+1. 今日採用したこと
+2. 今日は触らないもの
+3. 次回の小皿
+4. 保存ログ
+5. ここで止めていい理由
+
+責めずに、作業を閉じる方向でお願いします。
+まだ内容は送っていないので、次の入力を待ってください。"
+  },
+  {
+    "id": "ヤスリ",
+    "icon": "👊",
+    "label": "ヤスリ工程",
+    "prompt": "これから、文章・note素材・企画文・ログを送ります。
+
+ヤスリ工程として、意味を変えずに読みやすくしてください。
+
+やることは、
+- 余計な重複を削る
+- 文字化けや表記ゆれを直す
+- 芯の言葉を残す
+- 説明しすぎを減らす
+- タイトル候補を出す
+- 必要ならハッシュタグも出す
+
+ただし、勝手に外向きの安全な普通文へ薄めないでください。
+まだ内容は送っていないので、次の入力を待ってください。"
+  }
+];
+
+/* ─── 状態 ─── */
+let currentButton = null;
+
+/* ─── DOM参照 ─── */
+const screenTop    = document.getElementById('screen-top');
+const screenResult = document.getElementById('screen-result');
+const header       = document.getElementById('header');
+const backBtn      = document.getElementById('back-btn');
+const breadcrumb   = document.getElementById('breadcrumb');
+const promptDisplay = document.getElementById('prompt-display');
+const resultTitle  = document.getElementById('result-title');
+const copyBtn      = document.getElementById('copy-btn');
+const toast        = document.getElementById('toast');
+const handyGrid    = document.getElementById('handy-grid');
+
+/* ─── ボタン生成 ─── */
+BUTTONS.forEach(btn => {
+    const el = document.createElement('button');
+    el.className = 'handy-btn';
+    el.setAttribute('data-id', btn.id);
+    el.setAttribute('type', 'button');
+    el.innerHTML = `
+        <span class="handy-icon">${btn.icon}</span>
+        <span class="handy-label">${btn.label}</span>
+    `;
+    el.addEventListener('click', () => showResult(btn));
+    handyGrid.appendChild(el);
+});
+
+/* ─── 画面遷移 ─── */
+function showResult(btn) {
+    currentButton = btn;
+
+    // プロンプトをセット
+    promptDisplay.textContent = btn.prompt;
+    resultTitle.textContent   = btn.icon + ' ' + btn.label;
+    breadcrumb.textContent    = '「' + btn.label + '」';
+
+    // 画面切替
+    screenTop.classList.remove('active');
+    screenResult.classList.add('active');
+    header.classList.remove('hidden');
+
+    // スクロールをトップに戻す
+    window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function showTop() {
+    screenResult.classList.remove('active');
+    screenTop.classList.add('active');
+    header.classList.add('hidden');
+    currentButton = null;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+backBtn.addEventListener('click', showTop);
+
+/* ─── コピー ─── */
+copyBtn.addEventListener('click', () => {
+    if (!currentButton) return;
+    const text = currentButton.prompt;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(showToast).catch(() => fallbackCopy(text));
+    } else {
+        fallbackCopy(text);
+    }
+});
+
+function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    showToast();
+}
+
+let toastTimer = null;
+function showToast() {
+    toast.classList.remove('hidden');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.add('hidden'), 2000);
+}
+</script>
+</body>
+</html>
