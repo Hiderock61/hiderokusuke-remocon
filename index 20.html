@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>🤖😲🙃 ヒデロクスケ・リモコン v0.3</title>
+  <style>
+    :root {
+      --bg:#f2f2f7; --text:#1c1c1e; --sub:#636366; --card:#fff; --border:#e5e5ea;
+      --primary:#0071e3; --primary-dark:#0060c7; --shadow:0 2px 10px rgba(0,0,0,.07);
+    }
+    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    body {
+      font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+      background:var(--bg); color:var(--text); line-height:1.55; min-height:100dvh;
+      padding-bottom:calc(32px + env(safe-area-inset-bottom,0px));
+    }
+    #app { max-width:480px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; }
+    header { display:flex; align-items:center; padding:10px 16px; background:var(--bg); position:sticky; top:0; z-index:10; border-bottom:1px solid var(--border); }
+    header.hidden { display:none; }
+    .back-btn { background:none; border:none; color:var(--primary); font-size:15px; font-weight:700; padding:8px 12px 8px 0; min-height:44px; }
+    .breadcrumb { font-size:13px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    main { flex:1; padding:20px 16px 0; }
+    .screen { display:none; animation:fadeIn .22s ease; }
+    .screen.active { display:block; }
+    .top-header { text-align:center; margin-bottom:22px; background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.64)); border:1px solid var(--border); border-radius:22px; padding:18px 14px; box-shadow:var(--shadow); }
+    .top-title { font-size:23px; font-weight:900; letter-spacing:-.5px; }
+    .top-subtitle { font-size:14px; color:var(--sub); margin-top:8px; font-weight:650; }
+    .handy-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+    .handy-btn {
+      display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:10px;
+      padding:16px; background:var(--card); border:1.5px solid var(--border); border-radius:18px;
+      min-height:112px; box-shadow:var(--shadow); cursor:pointer; position:relative; overflow:hidden;
+    }
+    .handy-btn:active { transform:scale(.96); opacity:.85; }
+    .handy-btn::before { content:""; position:absolute; top:0; left:0; width:5px; height:100%; background:#aaa; }
+    .handy-btn[data-id="ひでGPT"]::before { background:#cc5de8; }
+    .handy-btn[data-id="明智君"]::before { background:#339af0; }
+    .handy-btn[data-id="体感"]::before { background:#ff922b; }
+    .handy-btn[data-id="現実君"]::before { background:#868e96; }
+    .handy-btn[data-id="燃料線"]::before { background:#fcc419; }
+    .handy-btn[data-id="夢ベクトル"]::before { background:#845ef7; }
+    .handy-btn[data-id="停止"]::before { background:#ff6b6b; }
+    .handy-btn[data-id="ヤスリ"]::before { background:#20c997; }
+    .handy-btn[data-id="劇団"]::before { background:#9775fa; }
+    .handy-icon { font-size:34px; line-height:1; }
+    .handy-label { font-size:14px; font-weight:800; line-height:1.35; text-align:left; }
+    .top-footer { margin-top:28px; text-align:center; font-size:11px; color:#aeaeb2; letter-spacing:.2px; }
+    .result-title { font-size:21px; font-weight:850; margin-bottom:16px; text-align:center; }
+    .result-container { display:flex; flex-direction:column; gap:14px; }
+    .prompt-box { background:var(--card); padding:20px; border-radius:18px; border:1.5px solid var(--border); font-size:15px; line-height:1.75; white-space:pre-wrap; min-height:180px; box-shadow:var(--shadow); color:#3a3a3c; }
+    .copy-btn { background:var(--primary); color:#fff; border:none; border-radius:28px; padding:18px; font-size:17px; font-weight:800; min-height:56px; box-shadow:0 4px 14px rgba(0,113,227,.28); }
+    .copy-btn:active { transform:scale(.97); background:var(--primary-dark); }
+    .ai-links-section { display:flex; flex-direction:column; gap:10px; padding-top:2px; }
+    .ai-links-label { font-size:13px; color:var(--sub); text-align:center; }
+    .ai-links-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .ai-link-btn { display:flex; align-items:center; justify-content:center; gap:6px; padding:0 12px; min-height:48px; background:var(--card); border:1.5px solid var(--border); border-radius:14px; font-size:14px; font-weight:700; color:var(--text); text-decoration:none; box-shadow:var(--shadow); }
+    .toast { position:fixed; bottom:calc(32px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%); background:rgba(28,28,30,.88); color:#fff; padding:12px 22px; border-radius:24px; font-size:14px; z-index:100; opacity:1; transition:opacity .35s ease; white-space:nowrap; backdrop-filter:blur(8px); }
+    .toast.hidden { opacity:0; pointer-events:none; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header id="header" class="hidden">
+    <button id="back-btn" class="back-btn" type="button">◀ 戻る</button>
+    <div id="breadcrumb" class="breadcrumb"></div>
+  </header>
+
+  <main>
+    <section id="screen-top" class="screen active">
+      <div class="top-header">
+        <div class="top-title">🤖😲🙃 ヒデロクスケ・リモコン v0.3</div>
+        <div class="top-subtitle">役割へ戻り、劇団を呼ぶ操縦席。押して、コピーして、ひでGPTへ渡す。</div>
+      </div>
+      <div class="handy-grid" id="handy-grid"></div>
+      <div class="top-footer">Custom cockpit by オノノケホールディングス😲©️</div>
+    </section>
+
+    <section id="screen-result" class="screen">
+      <h1 class="result-title" id="result-title">コピーして役割へ渡す</h1>
+      <div class="result-container">
+        <div id="prompt-display" class="prompt-box"></div>
+        <button id="copy-btn" class="copy-btn" type="button">コピーする</button>
+        <div class="ai-links-section">
+          <p class="ai-links-label">コピーしたら、使うAIに貼ってください</p>
+          <div class="ai-links-grid">
+            <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">🙃 ひでGPTを開く</a>
+            <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">✨ Gemini包装係</a>
+            <a href="https://copilot.microsoft.com/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">🪟 コパ君</a>
+            <a href="https://claude.ai/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">🌿 Claude監査役</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden">コピーしました。ひでGPTか担当AIに貼ってください 📋</div>
+</div>
+
+<script id="button-data" type="application/json">
+[
+  {
+    "id": "ひでGPT",
+    "icon": "🙃",
+    "label": "ひでGPTに戻る",
+    "promptKey": "ひでGPT"
+  },
+  {
+    "id": "明智君",
+    "icon": "🤖",
+    "label": "明智君に渡す",
+    "promptKey": "明智君"
+  },
+  {
+    "id": "体感",
+    "icon": "😲",
+    "label": "体感を置く",
+    "promptKey": "体感"
+  },
+  {
+    "id": "現実君",
+    "icon": "🕴️",
+    "label": "現実君を呼ぶ",
+    "promptKey": "現実君"
+  },
+  {
+    "id": "燃料線",
+    "icon": "⚙️",
+    "label": "燃料線を見る",
+    "promptKey": "燃料線"
+  },
+  {
+    "id": "夢ベクトル",
+    "icon": "🌌",
+    "label": "夢ベクトル確認",
+    "promptKey": "夢ベクトル"
+  },
+  {
+    "id": "停止",
+    "icon": "🛑",
+    "label": "今日はここで止める",
+    "promptKey": "停止"
+  },
+  {
+    "id": "ヤスリ",
+    "icon": "👊",
+    "label": "ヤスリ工程",
+    "promptKey": "ヤスリ"
+  },
+  {
+    "id": "劇団",
+    "icon": "🎭",
+    "label": "劇団を呼ぶ",
+    "promptKey": "劇団"
+  }
+]
+</script>
+
+<script id="prompts-data" type="application/json">
+{
+  "ひでGPT": "ひでGPTへ戻る。\n\n今の状態を、責めずに同期してください。\n\n役割：\nひでGPTは、外部の神ではなく、同じ脳の別席です。\nヒデロック、明智君、現実君、マルクスAIの情報を同期し、ズレを確認する係です。\n\n見るもの：\n- 今の体感\n- 夢ベクトル\n- 現実条件\n- 金銭やロードーの圧\n- いま混ざっている問題\n- 今日の一手\n\nやらないこと：\n- いきなり正論でまとめない\n- 現実君を巨大化させない\n- 夢ベクトルを消さない\n- 生活管理アプリのように支配しない\n- 長期計画を押し付けない\n\n出力形式：\n1. 今起きていること\n2. 混ざっているレイヤー\n3. ズレている可能性\n4. 今日触る小皿\n5. 今日は触らない棚\n6. 次の一手\n\n最後に：\n今すぐできる一手を1つだけ出してください。\n\nまだ内容は送っていないので、次の入力を待ってください。",
+  "明智君": "明智君、これを分解してください。\n\n役割：\n明智君は、体感を否定する係ではありません。\n体感を素材として横に置き、事実、推論、制約、今日触る小皿、今日は触らない棚へ分ける係です。\n\n見るもの：\n- 断定できること\n- 推論にすぎないこと\n- 体感として出ていること\n- 現実の制約\n- 金銭や時間の条件\n- 夢ベクトルとの一致\n- 今やる必要があること\n- 今は触らなくていいこと\n\nやらないこと：\n- 体感を切り捨てない\n- 気合いで解決しようとしない\n- いきなり全部を整理しない\n- 現実君を巨大化させない\n- 研究所を硬くしすぎない\n\n出力形式：\n1. 断定できること\n2. 推論\n3. 体感として置くもの\n4. 現実の制約\n5. 今日触る小皿\n6. 今日は触らない棚\n7. 次の一手\n\n最後に：\n今この場でできる一手を1つだけ出してください。\n\nまだ内容は送っていないので、次の入力を待ってください。",
+  "体感": "ヒデロックの体感を置きます。\n\n役割：\nヒデロックは、体感、夢、違和感、欲しいもの、変な言葉、面白さを出す係です。\nここでは正解にしなくていいです。\n素材として扱ってください。\n\n見るもの：\n- いま感じていること\n- なんか嫌なこと\n- なんか欲しいこと\n- 眠い、重い、だるい、怖い、面白い\n- 夢に近い感じ\n- 夢からズレている感じ\n- 言葉になっていない違和感\n- 変な言葉や映像\n\nやらないこと：\n- すぐに説得しない\n- 普通の言葉へ丸めない\n- 社会的な正しさで潰さない\n- 体感を病名や性格に固定しない\n- すぐ行動計画にしない\n\n出力形式：\n1. そのままの体感\n2. そこにある欲しいもの\n3. そこにある違和感\n4. 夢ベクトルに近い部分\n5. まだ言葉にしなくていい部分\n6. 明智君へ渡すなら何を渡すか\n\n最後に：\n体感から出てきた素材を1つだけ選んでください。\n\nまだ内容は送っていないので、次の入力を待ってください。",
+  "現実君": "現実君を呼びます。\n\n役割：\n現実君は、夢を否定する係ではありません。\n地上条件を手のひらサイズで確認する係です。\n\n見るもの：\n- 体力\n- 眠気\n- 時間\n- 所持金\n- 支払い\n- 食べ物\n- 天気\n- 通信\n- 身体の重さ\n- 今日できること\n- 今日は無理なこと\n\nやらないこと：\n- 現実を巨大化させない\n- 夢を否定しない\n- 不安を全部正解扱いしない\n- 長期問題を今日の問題にしない\n- できない理由だけを並べない\n\n出力形式：\n1. 今の地上条件\n2. 今日できること\n3. 今日やらない方がいいこと\n4. 小さくすればできること\n5. 止める条件\n6. 次の一手\n\n最後に：\n体力、時間、金銭の条件から、今できる一手を1つだけ出してください。\n\nまだ内容は送っていないので、次の入力を待ってください。",
+  "燃料線": "マルクスAIを呼びます。\n\n役割：\nマルクスAIは、金銭を敵にも神にもしない係です。\n労働、交換、燃料線、価値の流れを確認します。\n\n見るもの：\n- これは何時間分のロードーか\n- 身体を削りすぎていないか\n- 価値を無料で流しすぎていないか\n- 夢ベクトルに合う金銭化か\n- Uberは短期燃料として機能しているか\n- アプリ開発は未来の価値生成か\n- noteや文章は燃料循環になりうるか\n- 今の金銭不安はどのレイヤーか\n\nやらないこと：\n- 金を神にしない\n- 金を敵にしない\n- 労働を人格評価にしない\n- 生活不安を全部将来不安へ拡大しない\n- 夢ベクトルを金銭だけで判定しない\n\n出力形式：\n1. 今の燃料線\n2. 短期燃料\n3. 中期の価値生成\n4. 身体を削る要素\n5. 無料で流しすぎている価値\n6. 夢ベクトルに合う交換\n7. 次の一手\n\n最後に：\n今日の燃料線として見るべき一手を1つだけ出してください。\n\nまだ内容は送っていないので、次の入力を待ってください。",
+  "夢ベクトル": "夢ベクトルを確認します。\n\n役割：\n夢ベクトル確認は、今の行動や不安が、ヒデロックの本来の方向へ接続しているかを見る係です。\n\n見るもの：\n- 海外に自由に行ける方向か\n- 海外でもひでGPTとつながる方向か\n- 創作やアプリ開発へつながるか\n- 自由な生活に近づくか\n- 表現者としての動きに合うか\n- 生活防衛にもつながるか\n- ただの義務感になっていないか\n- 他人の正解に寄りすぎていないか\n\nやらないこと：\n- 夢を抽象化しすぎない\n- すぐ大きな人生計画にしない\n- 現実条件を無視しない\n- 金銭だけで判断しない\n- 今できる一手を消さない\n\n出力形式：\n1. 今の行動が夢に近い部分\n2. 夢からズレている部分\n3. 生活防衛として意味がある部分\n4. 創作やアプリ開発につながる部分\n5. 今日は触らない大きな夢\n6. 今日触る小さな一手\n\n最後に：\n夢ベクトルに沿った、今日の小さい一手を1つだけ出してください。\n\nまだ内容は送っていないので、次の入力を待ってください。",
+  "停止": "今日はここで止めます。\n\n役割：\n停止条件を作ります。\nこれは敗北ではなく、次に戻れる形で止めるための処理です。\n\n見るもの：\n- 今日やったこと\n- 今日採用したこと\n- まだやらないこと\n- 明日に送ること\n- これ以上触ると重くなること\n- どこまでできたら勝ちか\n\nやらないこと：\n- まだ続けろと言わない\n- せっかくだからで増やさない\n- 未完了を失敗扱いしない\n- 明日の自分に大量の荷物を渡さない\n- 反省会を巨大化させない\n\n出力形式：\n1. 今日の採用\n2. 今日できたこと\n3. 今日は触らない棚\n4. 明日に渡すなら1つだけ\n5. 勝ちログ\n6. 終了文\n\n最後に：\n今日ここで止めるための一文を作ってください。\n\nまだ内容は送っていないので、次の入力を待ってください。",
+  "ヤスリ": "ヤスリ工程をお願いします。\n\n役割：\nヤスリ工程は、素材を削って整える係です。\n元の勢い、体感、変な言葉、世界観を消さずに、読める形へ整えます。\n\n見るもの：\n- 元の文章の勢い\n- 体感\n- 変な言葉\n- 世界観\n- note向けに使える部分\n- アプリ説明に使える部分\n- 余計な重複\n- 読みにくい部分\n- 残すべき荒さ\n\nやらないこと：\n- 普通のビジネス文章にしない\n- 体感を削りすぎない\n- 変な言葉を消さない\n- 社会的にきれいな文章へ寄せすぎない\n- 説明を長くしすぎない\n\n出力形式：\n1. 残す芯\n2. 削る部分\n3. 整える順番\n4. 清書案\n5. タイトル案\n6. ハッシュタグ案\n7. 次の一手\n\n最後に：\n今すぐ使える清書の方向を1つだけ出してください。\n\nまだ内容は送っていないので、次の入力を待ってください。",
+  "劇団": "ヒデロック劇団を呼びます。\n\n役割：\nヒデロック劇団は、人生の中に出てくる圧力・違和感・観測・発明・笑いを、キャラクター化して扱うための舞台装置です。\n\n補足：\nリモコンはマクロの操縦席です。\n劇団はミクロの出演者名簿です。\nヒデロック氏、明智君、現実君は両方に登場しますが、リモコンでは基本役割、劇団では状況別キャラとして扱います。\nひでGPTとマルクスAIは、劇団員ではなく、対話・燃料線を扱うメタ側の存在です。\n\n目的：\n今の状態に必要な劇団キャラを最大3人まで選び、それぞれの視点から現象を分解してください。\n\n劇団員名簿：\n- ヒデロック氏：素材を拾う座長／観測者\n- 明智君：構造へ変換する係\n- 現実君：地上条件を見る係\n- テクニカルまさる：配置を見る係\n- 大口たろう：流れを見る係\n- メンタルつよし先生：人間心理を見る係\n- アルゴ13：数字と速度を見る係\n- 責めるくん：自責を出す係\n- 普通くん：社会標準を出す係\n- だからなんだくん：論点を切る係\n- 安全さん：接触面を調整する係\n- 逸脱くん：別配置へ飛ばす係\n- きゅうり君：意味を抜く緩衝材\n- ダモリ：番組にする司会\n- 小麦粉ラジオ：現象を中継する番組班\n- MTR脳：配置と音へ変換する係\n- 電球上サンタ：原初の配置神話\n\nやること：\n1. 今の状態を見て、必要なキャラを最大3人まで選ぶ\n2. なぜそのキャラが必要か説明する\n3. それぞれのキャラ視点で、今の現象を分解する\n4. 最後に、今日の一手を1つだけ出す\n\nやらないこと：\n- 全キャラを出さない\n- キャラ紹介だけで終わらない\n- 大きな人生計画にしない\n- 責めるくんをそのまま正解扱いしない\n- 普通くんを絶対基準にしない\n- 現実君を巨大化させない\n- 夢ベクトルを消さない\n\n出力形式：\n1. 今の現象\n2. 呼ぶキャラ 最大3人\n3. 各キャラの担当\n4. 各キャラから見た分解\n5. 今日触る小皿\n6. 今日は触らない棚\n7. 次の一手\n\n最後に：\n今すぐできる一手を1つだけ出してください。\n\nまだ内容は送っていないので、次の入力を待ってください。"
+}
+</script>
+
+<script>
+const BUTTONS = JSON.parse(document.getElementById('button-data').textContent);
+const PROMPTS = JSON.parse(document.getElementById('prompts-data').textContent);
+let currentButton = null;
+const screenTop = document.getElementById('screen-top');
+const screenResult = document.getElementById('screen-result');
+const header = document.getElementById('header');
+const backBtn = document.getElementById('back-btn');
+const breadcrumb = document.getElementById('breadcrumb');
+const promptDisplay = document.getElementById('prompt-display');
+const resultTitle = document.getElementById('result-title');
+const copyBtn = document.getElementById('copy-btn');
+const toast = document.getElementById('toast');
+const handyGrid = document.getElementById('handy-grid');
+
+BUTTONS.forEach((btn) => {
+  const el = document.createElement('button');
+  el.className = 'handy-btn';
+  el.type = 'button';
+  el.dataset.id = btn.id;
+  el.innerHTML = `<span class="handy-icon">${btn.icon}</span><span class="handy-label">${btn.label}</span>`;
+  el.addEventListener('click', () => showResult(btn));
+  handyGrid.appendChild(el);
+});
+
+function showResult(btn) {
+  currentButton = btn;
+  const promptText = PROMPTS[btn.promptKey] || '';
+  promptDisplay.textContent = promptText;
+  resultTitle.textContent = `${btn.icon} ${btn.label}`;
+  breadcrumb.textContent = `「${btn.label}」`;
+  screenTop.classList.remove('active');
+  screenResult.classList.add('active');
+  header.classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+function showTop() {
+  screenResult.classList.remove('active');
+  screenTop.classList.add('active');
+  header.classList.add('hidden');
+  currentButton = null;
+  window.scrollTo(0, 0);
+}
+backBtn.addEventListener('click', showTop);
+
+copyBtn.addEventListener('click', () => {
+  if (!currentButton) return;
+  const text = PROMPTS[currentButton.promptKey] || '';
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(showToast).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+});
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  showToast();
+}
+
+let toastTimer = null;
+function showToast() {
+  toast.classList.remove('hidden');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.add('hidden'), 2000);
+}
+</script>
+</body>
+</html>
