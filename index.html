@@ -235,13 +235,16 @@ function fallbackCopy(text) {
   document.body.appendChild(ta);
   ta.focus();
   ta.select();
-  try { document.execCommand('copy'); } catch(e) {}
+  let copied = false;
+  try { copied = typeof document.execCommand === 'function' && document.execCommand('copy') === true; } catch(e) { copied = false; }
   document.body.removeChild(ta);
-  showToast();
+  showToast(copied ? undefined : '自動コピーできませんでした。画面の依頼文を長押しして手動コピーしてください。');
+  return copied;
 }
 
 let toastTimer = null;
-function showToast() {
+function showToast(message) {
+  toast.textContent = message || 'コピーしました。ひでGPTか担当AIに貼ってください 📋';
   toast.classList.remove('hidden');
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.add('hidden'), 2000);
