@@ -51,6 +51,11 @@
     .prompt-box { background:var(--card); padding:20px; border-radius:18px; border:1.5px solid var(--border); font-size:15px; line-height:1.75; white-space:pre-wrap; min-height:180px; box-shadow:var(--shadow); color:#3a3a3c; }
     .copy-btn { background:var(--primary); color:#fff; border:none; border-radius:28px; padding:18px; font-size:17px; font-weight:800; min-height:56px; box-shadow:0 4px 14px rgba(0,113,227,.28); }
     .copy-btn:active { transform:scale(.97); background:var(--primary-dark); }
+    .handoff-guide { background:#eaf3ff; border:1.5px solid #9dc5f2; border-radius:16px; padding:16px; color:#193954; }
+    .handoff-guide h2 { font-size:16px; margin:0 0 10px; }
+    .handoff-guide ol { padding-left:22px; font-size:14px; line-height:1.75; }
+    .handoff-guide li + li { margin-top:5px; }
+    .handoff-guide p { margin-top:10px; font-size:12px; line-height:1.65; }
     .ai-links-section { display:flex; flex-direction:column; gap:10px; padding-top:2px; }
     .ai-links-label { font-size:13px; color:var(--sub); text-align:center; }
     .ai-links-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
@@ -81,9 +86,18 @@
       <h1 class="result-title" id="result-title">コピーして役割へ渡す</h1>
       <div class="result-container">
         <div id="prompt-display" class="prompt-box"></div>
-        <button id="copy-btn" class="copy-btn" type="button">コピーする</button>
+        <button id="copy-btn" class="copy-btn" type="button">コピーする（送信はしません）</button>
+        <section class="handoff-guide" aria-labelledby="akechi-handoff-title">
+          <h2 id="akechi-handoff-title">🤖 明智君へ渡す（今のこの会話）</h2>
+          <ol>
+            <li>上の青い「コピーする」を押す</li>
+            <li>左上の「×」でWeb画面を閉じ、今のChatGPT会話へ戻る（Safariならアプリを切り替えて戻る）</li>
+            <li>この会話の入力欄を長押しして「ペースト」→送信</li>
+          </ol>
+          <p>明智君は下の外部AIリンクにはありません。「ひでGPTを開く」は別のChatGPT画面を開くリンクで、この会話への自動送信ではありません。コピーに失敗したら、表示中の依頼文を長押しして手動コピーしてください。</p>
+        </section>
         <div class="ai-links-section">
-          <p class="ai-links-label">コピーしたら、使うAIに貼ってください</p>
+          <p class="ai-links-label">下はほかのAIを別画面で開くリンク（自動送信なし）</p>
           <div class="ai-links-grid">
             <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">🙃 ひでGPTを開く</a>
             <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="ai-link-btn">✨ Gemini包装係</a>
